@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BuildWise Build Tracker</title>
+<style>
+:root{
+ --bg:#FEF7FF;--sc:#F3EDF7;--sch:#ECE6F0;--text:#1D1B20;--muted:#49454F;--outline:#CAC4D0;
+ --p:#6750A4;--onp:#fff;--pc:#EADDFF;--onpc:#21005D;
+ --s:#625B71;--sc2:#E8DEF8;--onsc:#1D192B;
+ --t:#7D5260;--tc:#FFD8E4;--ontc:#31111D;
+ --ok:#2E7D4F;--okc:#C8F2D6;
+ --spring:cubic-bezier(.34,1.56,.64,1);
+}
+@media (prefers-color-scheme:dark){:root{
+ --bg:#141218;--sc:#211F26;--sch:#2B2930;--text:#E6E0E9;--muted:#CAC4D0;--outline:#49454F;
+ --p:#D0BCFF;--onp:#381E72;--pc:#4F378B;--onpc:#EADDFF;
+ --s:#CCC2DC;--sc2:#4A4458;--onsc:#E8DEF8;
+ --t:#EFB8C8;--tc:#633B48;--ontc:#FFD8E4;
+ --ok:#7FDBA0;--okc:#1E4A31;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:auto}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 "Google Sans","Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.appbar{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.01em}
+.logo{width:40px;height:40px;background:var(--p);color:var(--onp);display:grid;place-items:center;font-weight:800;border-radius:14px 22px 14px 22px}
+.grow{flex:1}
+.search{flex:1;min-width:180px;max-width:420px;display:flex;align-items:center;background:var(--sch);border-radius:99px;padding:0 16px;height:48px;gap:8px}
+.search input{flex:1;background:none;border:0;outline:0;min-width:0}
+.search:focus-within{outline:2px solid var(--p)}
+.overall{display:flex;align-items:center;gap:10px;background:var(--pc);color:var(--onpc);border-radius:99px;padding:4px 16px 4px 4px;font-weight:700;font-size:14px}
+.shell{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:0 16px 120px;max-width:1200px;margin:0 auto}
+nav{position:sticky;top:8px;align-self:start;max-height:calc(100vh - 16px);overflow:auto;display:flex;flex-direction:column;gap:6px;padding:4px;scrollbar-width:thin}
+.resume{background:var(--tc);color:var(--ontc);border-radius:28px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.resume b{font-size:14px}
+.btn{height:44px;padding:0 20px;border-radius:99px;font-weight:600;display:inline-flex;align-items:center;gap:8px;justify-content:center;transition:transform .25s var(--spring),border-radius .25s,background .2s}
+.btn:active{transform:scale(.94);border-radius:14px}
+.btn.fill{background:var(--p);color:var(--onp)}
+.btn.tonal{background:var(--sc2);color:var(--onsc)}
+.btn.out{border:1px solid var(--outline);color:var(--p)}
+.btn:focus-visible,.ni:focus-visible,.tab:focus-visible{outline:3px solid var(--p);outline-offset:2px}
+.ni{display:flex;align-items:center;gap:12px;text-align:left;padding:8px 14px 8px 8px;border-radius:99px;min-height:60px;transition:background .2s,border-radius .3s var(--spring)}
+.ni:hover{background:var(--sch)}
+.ni.on{background:var(--sc2);color:var(--onsc);border-radius:22px}
+.ni .rg{position:relative;width:44px;height:44px;flex:none}
+.ni .rg span{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:13px}
+.ni .tt{min-width:0}
+.ni .tt b{display:block;font-size:14px;font-weight:600;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ni .tt small{color:var(--muted);font-size:12px}
+.ni.fin .rg span{color:var(--ok)}
+.empty{padding:16px;color:var(--muted)}
+main{min-width:0}
+.hero{background:var(--pc);color:var(--onpc);border-radius:36px 36px 36px 12px;padding:20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.blob{width:64px;height:64px;flex:none;background:var(--p);color:var(--onp);display:grid;place-items:center;font-weight:800;font-size:24px;border-radius:30% 70% 70% 30%/30% 30% 70% 70%}
+.hero .ht{flex:1;min-width:200px}
+.hero .ph{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.hero h1{margin:2px 0 0;font-size:clamp(22px,4vw,32px);line-height:1.15;letter-spacing:-.02em}
+.hero .pr{position:relative;width:76px;height:76px;flex:none}
+.hero .pr span{position:absolute;inset:0;display:grid;place-items:center;font-weight:800}
+.tabs{display:flex;gap:4px;background:var(--sch);border-radius:99px;padding:4px;margin:14px 0;position:sticky;top:8px;z-index:4;overflow-x:auto;scrollbar-width:none}
+.tab{flex:1;white-space:nowrap;height:44px;padding:0 16px;border-radius:99px;font-weight:600;color:var(--muted);transition:background .25s,border-radius .3s var(--spring),color .2s}
+.tab.on{background:var(--p);color:var(--onp)}
+.linear{height:12px;background:var(--sch);border-radius:99px;overflow:hidden;margin:0 0 12px}
+.linear i{display:block;height:100%;background:var(--p);border-radius:99px;transition:width .4s var(--spring)}
+.task{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:var(--sc);border-radius:20px;margin-bottom:8px;cursor:pointer;transition:background .2s,border-radius .3s var(--spring)}
+.task:hover{background:var(--sch)}
+.task input{position:absolute;opacity:0;pointer-events:none}
+.task .bx{flex:none;width:28px;height:28px;border-radius:9px;border:2px solid var(--outline);display:grid;place-items:center;transition:all .25s var(--spring);color:transparent;font-weight:800;margin-top:1px}
+.task input:checked+.bx{background:var(--p);border-color:var(--p);color:var(--onp);border-radius:50%;transform:scale(1.08)}
+.task input:checked~.tx{text-decoration:line-through;color:var(--muted)}
+.task input:focus-visible+.bx{outline:3px solid var(--p);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.cd{padding:18px 20px;border-radius:28px;background:var(--sc)}
+.cd h3{margin:0 0 6px;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.cd p{margin:0}
+.cd ul{margin:0;padding-left:20px}
+.cd.a{background:var(--pc);color:var(--onpc);border-radius:36px 12px 36px 12px}
+.cd.b{background:var(--sc2);color:var(--onsc);border-radius:12px 36px 12px 36px}
+.cd.c{background:var(--tc);color:var(--ontc)}
+.cd.d{background:var(--okc);color:var(--text);border-radius:12px 36px 36px 36px}
+pre{background:var(--sch);padding:18px;border-radius:24px;white-space:pre-wrap;word-break:break-word;font:13px/1.65 ui-monospace,Menlo,Consolas,monospace;margin:0}
+textarea{width:100%;min-height:220px;background:var(--sc);border:2px solid transparent;border-radius:24px;padding:16px;resize:vertical;outline:0}
+textarea:focus{border-color:var(--p)}
+.pager{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.pager .btn{height:auto;min-height:60px;border-radius:24px;justify-content:flex-start;text-align:left;padding:10px 18px;flex-direction:column;align-items:flex-start;gap:0}
+.pager .btn small{opacity:.75;font-weight:500;font-size:12px}
+.pager .btn:last-child{align-items:flex-end;text-align:right}
+.fab{position:fixed;right:20px;bottom:20px;height:60px;padding:0 24px;border-radius:20px;background:var(--tc);color:var(--ontc);font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:9;display:flex;align-items:center;gap:10px;transition:transform .25s var(--spring),border-radius .3s var(--spring)}
+.fab:hover{border-radius:30px}.fab:active{transform:scale(.92)}
+.toast{position:fixed;left:50%;bottom:92px;transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:12px 20px;border-radius:16px;opacity:0;transition:.3s var(--spring);pointer-events:none;z-index:20;font-size:14px;max-width:90vw}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:860px){
+ .shell{grid-template-columns:1fr;padding-bottom:110px;gap:4px}
+ nav{position:sticky;top:0;z-index:6;flex-direction:row;overflow-x:auto;overflow-y:hidden;max-height:none;background:var(--bg);padding:6px 0;gap:6px;scrollbar-width:none}
+ .resume{display:none}
+ .ni{flex:none;min-height:52px;max-width:230px;padding-right:16px}
+ .ni .tt small{display:none}
+ .ni .tt b{-webkit-line-clamp:1;max-width:130px}
+ .tabs{top:64px}
+ .fab{right:14px;bottom:14px}
+ .pager{grid-template-columns:1fr}
+ .pager .btn:last-child{align-items:flex-start;text-align:left}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="brand"><div class="logo">B</div>BuildWise</div>
+  <label class="search"><span aria-hidden="true">&#128269;</span><input id="q" type="search" placeholder="Search sections  ( / )" aria-label="Search sections"></label>
+  <div class="grow"></div>
+  <div class="overall" id="overall"></div>
+</header>
+<div class="shell">
+  <nav id="nav" aria-label="Sections"></nav>
+  <main id="main"></main>
+</div>
+<button class="fab" id="fab" aria-label="Copy prompt for this section">&#10064; Copy prompt</button>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const S = [
+{n:1,ph:"Foundation",t:"Theme & design tokens",
+ tasks:["core/theme/app_colors.dart: semantic colours (primary, surface, success, warning, danger) for light and dark","core/theme/spacing.dart and radii.dart: 4/8/12/16/24/32/40 dp spacing, 8/12/16 radii","core/theme/app_typography.dart: Display, H1, H2, Body, Caption scale","app/theme.dart: build ThemeData, ColorScheme and component themes from the tokens","Check contrast, 48 dp touch targets and text scaling up to 200%","Preview light and dark on one scratch screen"],
+ what:"The first real code: every colour, spacing, radius and text style defined once as tokens, then turned into the Flutter theme.",
+ how:"Feature screens never use raw hex values or sizes. They read tokens through the theme, so one change restyles the whole app and dark mode comes for free.",
+ conn:"Used by every shared widget and screen after this. The report/PDF styling later reuses the same token names.",
+ feat:["Light and dark parity","Semantic status colours (never colour alone)","8 dp grid","Readable on budget Android devices"],
+ uc:["Supervisor reads KPI numbers in bright sunlight","Low-vision user scales the font to 200% without broken layouts"],
+ roles:["Flutter developer","Designer","Accessibility reviewer"]},
+{n:2,ph:"Foundation",t:"Shared UI components",
+ tasks:["core/widgets/app_button.dart (primary, tonal, outline, loading state)","core/widgets/app_text_field.dart plus money and quantity input fields","core/widgets/app_card.dart and app_data_table.dart","core/widgets/status_pill.dart and sync_badge.dart (Local, Queued, Synced, Conflict, Failed)","Empty, loading, error and stale-data widgets","Searchable selector with recent items and a project/site selector bar","App shell: scaffold with bottom navigation placeholders for the 9 areas"],
+ what:"The small reusable building blocks every feature screen is made from.",
+ how:"Each widget supports all its states (enabled, disabled, error, loading) and takes data only through parameters, so features stay thin and consistent.",
+ conn:"Built on the theme tokens. Used by every feature screen; the sync badge and project/site selector connect to sync and project state later.",
+ feat:["Keyboard-safe forms","Large touch targets","Visible sync state on every record","One primary action per screen"],
+ uc:["Supervisor picks a site with the selector and never posts to the wrong one","Accountant sees a Failed badge and taps retry"],
+ roles:["Flutter developer","Designer","QA"]},
+{n:3,ph:"Foundation",t:"Local database (Drift) & migrations",
+ tasks:["core/database/app_database.dart with base columns: id (UUID), organisation_id, created_at, updated_at, deleted_at, version, sync_state","Tables for identity: organisations, users, memberships, roles","Tables for structure: projects, sites, phases, milestones","Tables for estimate, supply, workforce, inventory, finance","sync_operations (outbox) table and audit_events table","Constraints and indexes, including UNIQUE(org, worker, work_date, shift)","Money as integer paise; quantities as exact decimals stored safely","Schema versioning and a migration test from every earlier version","Demo seed data for development"],
+ what:"The on-device SQLite database that makes the app work with no internet.",
+ how:"Every business row is written locally first with a UUID. Constraints in the database (not only forms) protect integrity. A schema version plus migration tests keep upgrades safe.",
+ conn:"Repositories read and write it. The outbox table feeds sync; the same shape is mirrored by the PostgreSQL schema on the backend.",
+ feat:["UUID keys for offline-created records","Soft delete only for reversible master data","Append-only financial and audit tables","Reactive queries via Drift streams"],
+ uc:["App is killed mid-entry and data is still there on restart","Duplicate attendance for the same worker and day is rejected"],
+ roles:["Flutter developer","Backend engineer","DBA"]},
+{n:4,ph:"Data & Logic",t:"Domain models & calculation engine",
+ tasks:["domain value objects: Money (paise), Quantity, Unit, Percentage","Entities per feature (Project, BoqItem, PurchaseOrder, Worker, JournalEntry ...)","Calculators: concrete volume, cement bags, steel weight, wastage","Calculators: landed unit cost, cost variance, forecast cost","Calculators: gross profit, operating profit, net cash movement","Calculator: net wages with advance recovery","Declare units, rounding and assumptions for every formula","Unit-test the worked example (budget 8,00,000 to forecast gross profit 1,70,000)"],
+ what:"Pure Dart business rules with no Flutter, database or network inside.",
+ how:"Each formula states its units, rounding and source. Forecast cost is actual to date plus estimate to complete, without double counting commitments. Cash movement is never called profit.",
+ conn:"Called by notifiers and use cases from estimate, procurement, payroll and finance features. Needs no other layer, so it can be tested alone.",
+ feat:["Visible wastage","Absolute and percentage variance","Configurable tax treatment","Explainable results (formula, factor, date)"],
+ uc:["Engineer calculates cement bags with a configured mix factor","Owner compares forecast margin with cash position"],
+ roles:["Flutter developer","Civil engineer (validates formulas)","Finance reviewer"]},
+{n:5,ph:"Data & Logic",t:"Repositories & state (Riverpod)",
+ tasks:["Repository interfaces in domain and implementations in data for each feature","Write pattern: one transaction saves the business row and its outbox operation","Providers: session, active organisation, active project and site","Form draft repository so unsaved forms survive app kill","Loading, empty, stale, offline and failed state handling","Pagination helper (keyset) for large ledgers","Derived providers for margin, variance and payroll totals (not stored)"],
+ what:"The layer between screens and the database, plus app-wide state.",
+ how:"Screen event goes to a notifier, which validates, calls the repository (one transaction), and the screen updates from the database stream. Repositories are the single source of truth.",
+ conn:"Sits on the database and calculators; every feature screen consumes its providers. The outbox write here is what sync later sends.",
+ feat:["Immutable state","Reactive streams","Scoped to organisation and project","Draft saving"],
+ uc:["Unsaved purchase order is still there after the phone restarts","Switching project instantly updates all lists"],
+ roles:["Flutter developer","Tech lead"]},
+{n:6,ph:"Features",t:"Auth, organisation & roles",
+ tasks:["Sign-in and create-organisation screens","Secure token storage and session provider","Membership and role-template data (Owner, PM, Supervisor, Procurement, Finance, Auditor, Worker)","Pure permission checker: role + project scope + approval limit","Approval ceilings and maker-checker rule (no self-approval)","Members screen and role assignment (admin only)","Local PIN or biometric unlock (optional)"],
+ what:"Who the user is, which organisation they belong to and what they are allowed to do.",
+ how:"A membership ties user, organisation, role template and project scope. Every action asks the permission checker. The server repeats the check, because hiding a button is not security.",
+ conn:"Every later feature calls the checker. Server RBAC and audit events mirror these rules.",
+ feat:["Permission templates","Per-project scope","Approval caps","Salary visible only to finance and owner"],
+ uc:["Supervisor cannot approve their own high-value expense","Auditor can read reports but create nothing"],
+ roles:["Owner/Admin","Project manager","Finance","Auditor"]},
+{n:7,ph:"Features",t:"Projects, sites & phases",
+ tasks:["Home portfolio screen with alerts and quick actions","Project list, create and edit forms","Project overview (budget, committed, actual, margin placeholders)","Sites, phases and milestones management","Progress update entry","Project and site switching wired to the selector bar"],
+ what:"The containers for all work: project, its sites, phases and milestones.",
+ how:"Every transaction in the app belongs to an organisation, project and site. Project overview totals are derived from the other features as they get built.",
+ conn:"Parent of estimates, purchases, expenses, attendance and finance. Uses the selector bar and providers from earlier steps.",
+ feat:["Portfolio status","Multi-site","Phases and milestones","Clear context always visible"],
+ uc:["Contractor with 3 sites sees budget, cash due and margin together","Supervisor updates progress on one site"],
+ roles:["Project manager","Owner","Site supervisor"]},
+{n:8,ph:"Features",t:"Estimate & BOQ",
+ tasks:["boq_versions and boq_items screens (list, edit, reorder)","Assemblies and rate components","Takeoff / measurement entry with units","Calculator results saved as BOQ items","Revision flow: edits after approval create a new version","Approve baseline (becomes immutable)","Compare two versions","Baseline budget feeding project overview"],
+ what:"Quantity takeoff and Bill of Quantities that produce the baseline budget.",
+ how:"Measurements and assemblies produce quantities, rates produce amounts. Approving a version freezes it; later changes are new revisions with a reason.",
+ conn:"Uses the calculation engine. Its budget feeds budget-vs-actual, procurement commitments and project profit.",
+ feat:["Versioned BOQ","Visible wastage and assumptions","Assemblies","Formula provenance"],
+ uc:["Engineer prepares a defensible estimate and revises it for the client","Material price change shows which BOQ lines are affected"],
+ roles:["Civil engineer","Project manager","Owner (approver)"]},
+{n:9,ph:"Features",t:"Materials & stock",
+ tasks:["Material catalogue with units and canonical codes","Price history per vendor and date","Stock locations (store, site)","Receive, issue and return flows creating stock movements","Wastage entry and reconciliation view (received vs issued vs returned)","Explicit negative-stock policy","Low-stock and price-change alerts tied to BOQ lines"],
+ what:"Tracks what material came in, went to site and is left.",
+ how:"Every change is a stock movement in a ledger (never an edited quantity). Reconciliation compares theoretical need from the BOQ with actual consumption.",
+ conn:"Receives from procurement GRNs, consumes into site cost, compares with BOQ. Movements post cost events to finance.",
+ feat:["Receipt, issue, return ledger","Consumption variance","Price history","Wastage visibility"],
+ uc:["Supervisor issues cement to a slab pour and the system shows variance","Owner finds leakage before closeout"],
+ roles:["Site supervisor","Store keeper","Project manager"]},
+{n:10,ph:"Features",t:"Procurement (vendors, PO, GRN)",
+ tasks:["Vendor master","RFQ and vendor quote entry","Quote comparison using landed unit cost","Purchase order draft, approval (limit based) and issue","GRN posting against PO lines","Invoice entry and 3-way match (PO, GRN, invoice)","Committed-cost calculation for budget views"],
+ what:"Buying material: ask for quotes, compare, order, receive and match the invoice.",
+ how:"Quotes become a PO; receiving creates a GRN and stock movement; invoice is matched to both. Requester cannot approve their own PO above the limit.",
+ conn:"Uses vendors and materials, produces committed cost for project overview and receipts for stock. Invoices flow to payables in finance.",
+ feat:["Landed-cost comparison","Approval thresholds","PO/GRN/invoice linkage","Quote coverage metric"],
+ uc:["Procurement compares three vendor quotes including freight","Finance blocks a bill that does not match the GRN"],
+ roles:["Procurement","Project manager","Finance","Supervisor (GRN)"]},
+{n:11,ph:"Features",t:"Expenses & cashbook",
+ tasks:["Expense entry form with category, project, site and receipt photo","Attachment capture with permission fallback to file picker","Small-expense approval within cap, escalation above it","Cashbook and petty cash views","Basic receivables and payables lists","Reconciliation marker for matched transactions"],
+ what:"Everyday site spending and the money-in/money-out record.",
+ how:"An expense is saved locally with its attachment queued. Under the cap it posts; above it, it routes for approval. Cashbook shows cash movement separately from profit.",
+ conn:"Posts to finance journals, counts in actual cost on project overview, attachments use the sync upload queue.",
+ feat:["Fast field entry","Evidence linked to record","Approval caps","Cash vs profit clarity"],
+ uc:["Supervisor logs a transport expense with a photo in seconds","Owner sees unreconciled transactions"],
+ roles:["Site supervisor","Finance","Project manager"]},
+{n:12,ph:"Features",t:"Workforce, attendance & payroll",
+ tasks:["Worker master and rate history","Batch attendance entry (unique per worker, day, shift)","Timesheets","Advances and recoveries","Payroll run that snapshots rates and attendance","Payroll register and payslip PDF","Approval and payment recording","Worker portal view of own attendance (optional)"],
+ what:"Labour cost: who worked, what they earned, advances and what is payable.",
+ how:"Attendance plus rate gives gross; additions and deductions plus advance recovery give net. An approved payroll run is a snapshot and is corrected only by adjustment.",
+ conn:"Uses worker rates and attendance, feeds labour cost into project actuals and payables into finance.",
+ feat:["Duplicate-pay prevention","Advance recovery","Snapshot payroll","Salary privacy"],
+ uc:["Supervisor marks attendance for 12 workers offline","Finance runs payroll and records payments"],
+ roles:["Site supervisor","Finance","Owner","Worker"]},
+{n:13,ph:"Features",t:"Finance, ledger & profit dashboard",
+ tasks:["Chart of accounts","Journal posting service rejecting unbalanced entries","Reversal and adjustment with reason (no edits to posted entries)","Payments and allocations to bills and payroll","Period lock","Reconciliation screen","Budget vs actual, committed and forecast views","Project profit summary with clear margin labels"],
+ what:"The money trail: journals, payments and the project profit picture.",
+ how:"Every cost or payment event posts a balanced journal. Corrections are reversals. Dashboards read posted data and show forecast and cash separately.",
+ conn:"Receives events from expenses, procurement, stock and payroll; supplies figures to reports and the home portfolio.",
+ feat:["Double-entry integrity","Append-only posting","Period lock","Auditable money trail"],
+ uc:["Owner closes a project with revenue, cost, margin and unpaid bills","Auditor traces a payment back to its bill"],
+ roles:["Finance","Owner","Auditor"]},
+{n:14,ph:"Features",t:"Reports, exports & localisation",
+ tasks:["l10n ARB files for English, Tamil and Hindi","intl formatting for dates, numbers and currency","PDF templates with licensed Tamil/Hindi fonts and glyph tests","CSV and XLSX export","Saved report templates and an export queue","Log sensitive exports in the audit trail","Test long strings, overflow and grayscale print"],
+ what:"Printable and shareable outputs plus multilingual UI.",
+ how:"Reports read posted data and use a separate print token map. Only labels are translated; database codes stay locale neutral.",
+ conn:"Reads from all features; export logging goes to audit; uses theme tokens.",
+ feat:["PDF/CSV/XLSX","English, Tamil, Hindi","Saved templates","No hidden per-report limits"],
+ uc:["Owner prints a payroll register","Tamil-speaking supervisor uses the app fully in Tamil"],
+ roles:["Owner","Finance","Auditor","Translator"]},
+{n:15,ph:"Backend & Sync",t:"Backend API & PostgreSQL",
+ tasks:["Node + TypeScript modular monolith scaffold","PostgreSQL schema and versioned migrations mirroring the app tables","Row-level security plus service-layer tenant checks","Auth: login, rotating refresh, session revoke","RBAC middleware (role, project scope, limits)","Modules: projects, estimating, procurement, workforce, finance, reporting","Private object storage and signed URLs","Worker queue for exports and notifications","Backups, point-in-time recovery and a restore drill"],
+ what:"The central multi-tenant server.",
+ how:"Auth resolves membership and scope, domain modules run transactional logic, and a DB check rejects unbalanced journals. Heavy work runs in queued workers.",
+ conn:"Receives sync pushes from the app, enforces the same permission rules, stores attachments and generates server-side reports.",
+ feat:["POST /v1/auth/refresh","POST /v1/sync/push","POST /v1/purchase-orders","POST /v1/attendance/batches","POST /v1/reports"],
+ uc:["Mobile pushes queued operations after reconnect","Finance triggers a payroll PDF job"],
+ roles:["Backend engineer","DevOps","Security reviewer"]},
+{n:16,ph:"Backend & Sync",t:"Offline sync",
+ tasks:["Sync worker that reads the outbox and pushes with idempotency keys","Server applies once and returns prior result on duplicates","Pull with monotonic cursor and tombstones","Conflict screen showing local and server versions","Retry with backoff and jitter plus manual retry","Resumable attachment upload with content hash","Rules: financial events never last-write-wins","Tests: airplane mode, kill/restart, duplicate sync, conflict"],
+ what:"Moves local data to the server and back safely.",
+ how:"Local commit first, background push, acknowledgement only after the server confirms. Approved BOQ and payroll are versioned so edits become new revisions.",
+ conn:"Reads the outbox from the database, calls the backend sync API, updates sync badges and the sync centre.",
+ feat:["Record-level sync states","Visible backlog","Conflict resolution","Exactly-once effect"],
+ uc:["Site has no signal all day then syncs everything","Two users edit the same note and a merge is reviewed"],
+ roles:["Backend engineer","Flutter developer","Supervisor","Accounts"]},
+{n:17,ph:"Launch",t:"Security, audit & testing",
+ tasks:["Append-only audit events with actor, time, reason and source","Protect local secrets and sensitive local data","Cross-tenant and privilege tests","Property tests that debits equal credits","Widget, DB and integration tests; low-memory Android checks","Large font, Tamil glyph and screen-reader checks","Privacy: retention, export and delete workflows","RPO/RTO exercise"],
+ what:"The controls and tests that make the product trustworthy.",
+ how:"Controls are paired with specific tests and block release when they fail.",
+ conn:"Covers auth, permissions, database integrity, sync and exports.",
+ feat:["Tamper-evident audit","Idempotent posting","Signed URLs","Crash-free and sync-backlog metrics"],
+ uc:["Lost phone: tokens revoked and data protected","Auditor verifies a correction trail"],
+ roles:["Security lead","QA","Owner","Auditor"]},
+{n:18,ph:"Launch",t:"Pilot, pricing & release",
+ tasks:["Enforce plan limits (Free, Solo, Team, Business) and show limits before reached","Keep data exportable on every plan","Run a 4-week pilot with 5-8 businesses","Measure estimate revision time, quote coverage, payroll corrections, unreconciled transactions","Test willingness to pay with real offers","Go / no-go review","Store listing and release build"],
+ what:"Putting the app in real hands and validating it can be a business.",
+ how:"Pilot users do real work; compare against baseline task times; proceed only if they repeatedly enter transactions and reconcile purchases.",
+ conn:"Depends on all features working; findings loop back into earlier steps.",
+ feat:["Free: 1 project, local mode","Solo 499/month","Team 999/month","Business 1,499/month"],
+ uc:["Solo contractor upgrades for procurement and exports","Growing firm moves to Team for approvals and payroll"],
+ roles:["Founder","Product manager","Support","Pilot users"]},
+{n:19,ph:"Tooling",t:"Packages, routing & CI (only when needed)",
+ tasks:["Add packages a step needs: riverpod, drift, dio, intl, secure storage","Router: go_router routes and redirects for the 9 areas","Flavours dev/staging/prod","CI: format, analyze, tests, signed build","Lints, dependency and licence audit","Pin pubspec.lock and test on real Android devices"],
+ what:"Project plumbing, intentionally last so it never blocks real feature work.",
+ how:"Add a package or route at the moment a step needs it; keep a stub for navigation until then.",
+ conn:"Supports every step; revisit when a step needs a new dependency.",
+ feat:["Typed navigation","Separate app IDs per flavour","Automated checks"],
+ uc:["New screen needs a route","CI blocks a failing build"],
+ roles:["Flutter lead","DevOps"]}
+];
+
+const KEY="buildwise_tracker_v2";
+let st={};
+try{st=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){st={}}
+st.c=st.c||{};st.notes=st.notes||{};st.scroll=st.scroll||{};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+const $=id=>document.getElementById(id);
+const nav=$("nav"),main=$("main");
+if("scrollRestoration" in history)history.scrollRestoration="manual";
+const TABS=[["tasks","Tasks"],["overview","Overview"],["prompt","Prompt"],["notes","Notes"]];
+let q="";
+function get(n){return S.find(s=>s.n===n)}
+const hashN=(location.hash.match(/^#s(\d+)/)||[])[1];
+let cur=get(+hashN)?+hashN:(get(st.last)?st.last:S[0].n);
+let tab=TABS.some(t=>t[0]===st.tab)?st.tab:"tasks";
+const hadSaved=!!st.last;
+
+function esc(x){return String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function done(s){return s.tasks.filter((_,i)=>st.c[s.n+"_"+i]).length}
+function ring(p,size,w){const r=(size-w)/2,C=2*Math.PI*r;return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" style="transform:rotate(-90deg)"><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="currentColor" stroke-opacity=".18" stroke-width="'+w+'"/><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="var(--p)" stroke-width="'+w+'" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-p/100))+'" style="transition:stroke-dashoffset .5s"/></svg>'}
+function mkPrompt(s){
+ const L=a=>a.map(x=>"- "+x).join("\n");
+ return "ROLE: You are a senior product engineer on BuildWise, an India-first, offline-first construction cost-control app (Flutter + Node.js/TypeScript + PostgreSQL, SQLite via Drift on device).\n\n"+
+ "TASK: Design and implement section \""+s.t+"\" (build step "+s.n+" of "+S.length+").\n\nCONTEXT: The Flutter project, folders and files already exist (lib/app, core, features/*, l10n). Do not redo project setup, package installation or routing unless this step says so.\n\n"+
+ "WHAT IT IS:\n"+s.what+"\n\nHOW IT WORKS:\n"+s.how+"\n\nWHERE IT IS CONNECTED:\n"+s.conn+"\n\nFEATURES:\n"+L(s.feat)+"\n\nUSE CASES:\n"+L(s.uc)+"\n\nROLES INVOLVED:\n"+L(s.roles)+"\n\nCHECKLIST TO COMPLETE:\n"+L(s.tasks)+
+ "\n\nGLOBAL RULES: money as paise integer or NUMERIC with currency code; posted financial events are append-only (corrections by reversal); enforce organisation/project scope on the server; local write first, sync idempotent; no hard-coded strings or colours; money and dates in locale format.\n\nDELIVERABLES: 1) short design note, 2) data model or API changes, 3) code, 4) test cases, 5) acceptance criteria, 6) risks and open questions.";
+}
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("show"),2200)}
+function totals(){let a=0,d=0;S.forEach(s=>{a+=s.tasks.length;d+=done(s)});return {a,d,p:a?Math.round(d/a*100):0}}
+
+function renderOverall(){const t=totals();$("overall").innerHTML='<span style="position:relative;display:inline-grid;place-items:center">'+ring(t.p,44,5)+'<b style="position:absolute;font-size:11px">'+t.p+'%</b></span>'+t.d+'/'+t.a+' tasks'}
+
+function nextUnfinished(){
+ const i=S.findIndex(s=>s.n===cur);
+ for(let k=1;k<=S.length;k++){const s=S[(i+k)%S.length];if(done(s)<s.tasks.length)return s.n}
+ return null;
+}
+function renderNav(){
+ const f=q.trim().toLowerCase();
+ const items=S.filter(s=>!f||(s.t+" "+s.ph+" "+s.n).toLowerCase().includes(f));
+ const nu=nextUnfinished(),c=get(cur);
+ let h='<div class="resume"><b>Last opened: '+c.n+'. '+esc(c.t)+'</b><div class="row" style="margin:0"><button class="btn fill" data-go="'+(nu||cur)+'">'+(nu?"Next unfinished &rarr;":"All done!")+'</button></div></div>';
+ h+=items.map(s=>{const d=done(s),p=Math.round(d/s.tasks.length*100);return '<button class="ni'+(s.n===cur?" on":"")+(p===100?" fin":"")+'" data-go="'+s.n+'" aria-current="'+(s.n===cur)+'"><span class="rg">'+ring(p,44,5)+'<span>'+(p===100?"&#10003;":s.n)+'</span></span><span class="tt"><b>'+esc(s.t)+'</b><small>'+esc(s.ph)+' &middot; '+d+'/'+s.tasks.length+'</small></span></button>'}).join("")||'<div class="empty">No sections match.</div>';
+ nav.innerHTML=h;
+ nav.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(+b.dataset.go));
+}
+function centerNav(smooth){
+ const a=nav.querySelector(".ni.on");if(!a)return;
+ nav.scrollTo({left:a.offsetLeft-nav.clientWidth/2+a.offsetWidth/2,top:a.offsetTop-nav.clientHeight/2+a.offsetHeight/2,behavior:smooth?"smooth":"auto"});
+}
+function heroHtml(s){const d=done(s),p=Math.round(d/s.tasks.length*100);
+ return '<div class="blob">'+s.n+'</div><div class="ht"><div class="ph">'+esc(s.ph)+' &middot; Build step '+s.n+' of '+S.length+'</div><h1>'+esc(s.t)+'</h1></div><div class="pr">'+ring(p,76,8)+'<span>'+p+'%</span></div>'}
+function panelHtml(s){
+ if(tab==="tasks"){const d=done(s),p=Math.round(d/s.tasks.length*100);
+  return '<div class="linear"><i id="lin" style="width:'+p+'%"></i></div>'+
+  s.tasks.map((t,i)=>'<label class="task"><input type="checkbox" data-k="'+s.n+'_'+i+'"'+(st.c[s.n+"_"+i]?" checked":"")+'><span class="bx">&#10003;</span><span class="tx">'+esc(t)+'</span></label>').join("")+
+  '<div class="row"><button class="btn tonal" id="all">Check all</button><button class="btn out" id="none">Clear</button></div>';}
+ if(tab==="overview"){const ul=a=>"<ul>"+a.map(x=>"<li>"+esc(x)+"</li>").join("")+"</ul>";
+  return '<div class="cards"><div class="cd a"><h3>What it is</h3><p>'+esc(s.what)+'</p></div><div class="cd b"><h3>How it works</h3><p>'+esc(s.how)+'</p></div><div class="cd c"><h3>Connected to</h3><p>'+esc(s.conn)+'</p></div><div class="cd d"><h3>Features</h3>'+ul(s.feat)+'</div><div class="cd"><h3>Use cases</h3>'+ul(s.uc)+'</div><div class="cd a"><h3>Roles</h3>'+ul(s.roles)+'</div></div>';}
+ if(tab==="prompt")return '<pre>'+esc(mkPrompt(s))+'</pre><div class="row"><button class="btn fill" id="cp">Copy prompt</button></div>';
+ return '<textarea id="note" placeholder="Decisions, links, blockers...">'+esc(st.notes[s.n]||"")+'</textarea>';
+}
+function renderMain(restore){
+ const s=get(cur),i=S.indexOf(s),pv=S[i-1],nx=S[i+1];
+ main.innerHTML='<section class="hero" id="hero">'+heroHtml(s)+'</section>'+
+ '<div class="tabs" role="tablist">'+TABS.map((t,k)=>'<button class="tab'+(t[0]===tab?" on":"")+'" role="tab" data-t="'+t[0]+'">'+t[1]+'</button>').join("")+'</div>'+
+ '<div id="panel">'+panelHtml(s)+'</div>'+
+ '<div class="pager">'+(pv?'<button class="btn tonal" data-go="'+pv.n+'"><small>&larr; Previous</small>'+esc(pv.t)+'</button>':'<span></span>')+(nx?'<button class="btn tonal" data-go="'+nx.n+'"><small>Next &rarr;</small>'+esc(nx.t)+'</button>':'<span></span>')+'</div>';
+ main.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(+b.dataset.go,true));
+ main.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+ bindPanel(s);
+ document.title=s.n+". "+s.t+" | BuildWise";
+ requestAnimationFrame(()=>{window.scrollTo(0,restore?(st.scroll[cur+"|"+tab]||0):0)});
+}
+function bindPanel(s){
+ main.querySelectorAll(".task input").forEach(i=>i.onchange=()=>{if(i.checked)st.c[i.dataset.k]=true;else delete st.c[i.dataset.k];save();refresh()});
+ const a=$("all"),n=$("none"),cp=$("cp"),nt=$("note");
+ if(a)a.onclick=()=>{s.tasks.forEach((_,i)=>st.c[s.n+"_"+i]=true);save();renderMain(true);refresh()};
+ if(n)n.onclick=()=>{s.tasks.forEach((_,i)=>delete st.c[s.n+"_"+i]);save();renderMain(true);refresh()};
+ if(cp)cp.onclick=copyPrompt;
+ if(nt)nt.oninput=e=>{st.notes[s.n]=e.target.value;save()};
+}
+function refresh(){ // update progress without touching scroll or the panel
+ const s=get(cur),d=done(s),p=Math.round(d/s.tasks.length*100);
+ $("hero").innerHTML=heroHtml(s);
+ const l=$("lin");if(l)l.style.width=p+"%";
+ renderNav();centerNav(false);renderOverall();
+ if(p===100&&d>0&&!refresh.msg){}
+}
+function go(n,smooth){
+ st.scroll[cur+"|"+tab]=window.scrollY;
+ cur=n;st.last=n;st.tab=tab;save();
+ history.replaceState(null,"","#s"+n);
+ renderNav();centerNav(smooth!==false);renderMain(true);
+}
+function setTab(t){
+ st.scroll[cur+"|"+tab]=window.scrollY;
+ tab=t;st.tab=t;save();
+ main.querySelectorAll(".tab").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+ $("panel").innerHTML=panelHtml(get(cur));bindPanel(get(cur));
+ requestAnimationFrame(()=>window.scrollTo(0,st.scroll[cur+"|"+tab]||0));
+}
+function copyPrompt(){
+ const t=mkPrompt(get(cur));
+ const fb=()=>{const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy")}catch(e){}a.remove();toast("Prompt copied")};
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>toast("Prompt copied")).catch(fb);else fb();
+}
+$("fab").onclick=copyPrompt;
+$("q").oninput=e=>{q=e.target.value;renderNav();centerNav(false)};
+let tm;
+window.addEventListener("scroll",()=>{clearTimeout(tm);tm=setTimeout(()=>{st.scroll[cur+"|"+tab]=window.scrollY;save()},150)},{passive:true});
+window.addEventListener("pagehide",()=>{st.scroll[cur+"|"+tab]=window.scrollY;save()});
+document.addEventListener("keydown",e=>{
+ const tag=(e.target.tagName||"").toLowerCase();
+ if(e.key==="/"&&tag!=="input"&&tag!=="textarea"){e.preventDefault();$("q").focus();return}
+ if(tag==="input"&&e.target.type!=="checkbox"||tag==="textarea")return;
+ const i=S.findIndex(s=>s.n===cur);
+ if(e.key==="ArrowRight"&&S[i+1])go(S[i+1].n,true);
+ else if(e.key==="ArrowLeft"&&S[i-1])go(S[i-1].n,true);
+ else if(/^[1-4]$/.test(e.key))setTab(TABS[+e.key-1][0]);
+});
+
+renderOverall();renderNav();renderMain(true);
+requestAnimationFrame(()=>centerNav(false));
+st.last=cur;save();
+if(hadSaved)toast("Welcome back: resumed section "+cur+" ("+TABS.find(t=>t[0]===tab)[1]+")");
+</script>
+</body>
+</html>
